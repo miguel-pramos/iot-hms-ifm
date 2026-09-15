@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard ifm em Tempo Real</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</head>
+<body>
+    <main class="shell">
+        <section class="hero">
+            <div class="eyebrow">ifm io-hub</div>
+            <h1>Monitoramento em tempo real</h1>
+            <p>Leitura contínua via Modbus TCP com atualização automática no navegador.</p>
+
+            <div class="status-row">
+                <span id="statusConexao" class="status-chip status-offline">Aguardando conexão</span>
+                <span id="valorAtual" class="metric">Valor atual: --</span>
+            </div>
+        </section>
+
+        <section class="card chart-card">
+            <div class="card-head">
+                <h2>Valor do registrador</h2>
+                <span class="hint">Atualização automática</span>
+            </div>
+
+            <div class="chart-wrap">
+                <canvas id="graficoRealTime"></canvas>
+            </div>
+        </section>
+
+        <section class="card telemetry-card">
+            <div class="card-head">
+                <h2>Latência e throughput</h2>
+                <span class="hint">RTT via Socket.IO e ciclo Modbus</span>
+            </div>
+
+            <div class="metrics-grid">
+                <article class="metric-card">
+                    <span class="metric-label">Fim a fim (aprox.)</span>
+                    <strong id="metricE2E">--</strong>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">RTT Socket.IO</span>
+                    <strong id="metricRtt">--</strong>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">Leitura Modbus</span>
+                    <strong id="metricModbusRead">--</strong>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">Escrita da torre</span>
+                    <strong id="metricModbusWrite">--</strong>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">Ciclo backend</span>
+                    <strong id="metricCycle">--</strong>
+                </article>
+                <article class="metric-card">
+                    <span class="metric-label">Taxa média</span>
+                    <strong id="metricRate">--</strong>
+                </article>
+            </div>
+
+            <p class="telemetry-note">A latência fim a fim usa o timestamp do servidor e fica mais confiável com relógios sincronizados. O RTT Socket.IO independe disso e é o melhor número para comparar cabeado versus 5G.</p>
+        </section>
+    </main>
+</body>
+</html>

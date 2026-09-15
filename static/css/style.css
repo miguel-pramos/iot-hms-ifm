@@ -1,0 +1,225 @@
+:root {
+    color-scheme: dark;
+    --bg: #050816;
+    --bg-accent: #0b1224;
+    --panel: rgba(10, 15, 28, 0.88);
+    --panel-strong: rgba(14, 20, 37, 0.96);
+    --panel-border: rgba(148, 163, 184, 0.14);
+    --text: #e5eefc;
+    --muted: #9bb0cc;
+    --accent: #ff6600;
+    --accent-soft: rgba(255, 102, 0, 0.16);
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at top left, rgba(255, 102, 0, 0.16), transparent 30%),
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.11), transparent 26%),
+        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.08), transparent 24%),
+        linear-gradient(180deg, var(--bg-accent) 0%, var(--bg) 100%);
+    padding: 24px;
+}
+
+.shell {
+    width: min(1120px, 100%);
+    margin: 0 auto;
+    display: grid;
+    gap: 22px;
+}
+
+.hero,
+.card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow);
+}
+
+.hero {
+    border-radius: 24px;
+    padding: 28px 30px;
+    background: linear-gradient(180deg, rgba(14, 20, 37, 0.96) 0%, rgba(10, 15, 28, 0.88) 100%);
+}
+
+.eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+}
+
+h1 {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.1rem);
+    line-height: 1.05;
+}
+
+.hero p {
+    margin: 14px 0 0;
+    max-width: 68ch;
+    color: var(--muted);
+    font-size: 1.02rem;
+    line-height: 1.6;
+}
+
+.status-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.status-chip,
+.metric,
+.hint {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.status-chip {
+    padding: 10px 14px;
+    font-size: 0.92rem;
+}
+
+.metric {
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    color: var(--text);
+}
+
+.status-offline {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--warning);
+}
+
+.status-online {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--success);
+}
+
+.card {
+    border-radius: 24px;
+    padding: 22px;
+    background: var(--panel-strong);
+}
+
+.card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.card-head h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.hint {
+    padding: 8px 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.85rem;
+}
+
+canvas {
+    color: var(--text);
+}
+
+.chart-wrap {
+    position: relative;
+    min-height: 420px;
+}
+
+.chart-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.telemetry-card {
+    display: grid;
+    gap: 18px;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.metric-card {
+    display: grid;
+    gap: 8px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.metric-label {
+    color: var(--muted);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.metric-card strong {
+    font-size: clamp(1rem, 1.8vw, 1.35rem);
+    font-weight: 700;
+    color: var(--text);
+}
+
+.telemetry-note {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.5;
+    font-size: 0.94rem;
+}
+
+@media (max-width: 720px) {
+    body {
+        padding: 14px;
+    }
+
+    .hero,
+    .card {
+        padding: 18px;
+        border-radius: 18px;
+    }
+
+    .card-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .chart-wrap {
+        min-height: 320px;
+    }
+}
