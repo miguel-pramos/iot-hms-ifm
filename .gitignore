@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.egg-info/
+.Python
+
+# Virtualenv
+venv/
+.venv/
+env/
+ENV/
+
+# Claude Code local state
+.claude/
+
+# OS / editor
+.DS_Store
+*.swp
+
+# Env files
+.env
+.env.local
