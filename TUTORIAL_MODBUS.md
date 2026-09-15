@@ -24,10 +24,17 @@ nc -zv 192.168.10.250 502
 
 ## 3. Ler registradores via `mbpoll` (CLI)
 
-Instala o `mbpoll` (Arch):
+Instala o `mbpoll`:
 
 ```bash
+# Arch
 sudo pacman -S mbpoll
+
+# Ubuntu/Debian
+sudo apt update && sudo apt install mbpoll
+
+# Fedora
+sudo dnf install mbpoll
 ```
 
 Lê 10 holding registers a partir do endereço 0:
