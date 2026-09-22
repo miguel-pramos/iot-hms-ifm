@@ -47,40 +47,61 @@ TORRE_INVERTIDA = False
 TORRE_NUM_NIVEIS = 5
 TORRE_NUM_REGISTERS = 3
 MAX_DISTANCIA = 240
+# Zona morta do sensor: abaixo disso a torre fica apagada (nivel 0) e a faixa
+# util 15..240 mm e dividida igualmente entre os TORRE_NUM_NIVEIS segmentos.
+TORRE_DISTANCIA_MIN = 15
+# Ordem fisica de acendimento, do segmento de baixo para o de cima:
+# (indice do registrador a partir de 2102, byte do registrador).
+# Os 4 primeiros vem do mapeamento ja validado na bancada; o 5o segue o mesmo
+# zigue-zague e e o unico inferido -- basta trocar aqui se o hardware divergir.
+TORRE_SEGMENTOS = (
+    (0, 'baixo'),
+    (0, 'alto'),
+    (1, 'alto'),
+    (1, 'baixo'),
+    (2, 'baixo'),
+)
 TORRE_CODIGO_OFF = 0x00
 TORRE_CODIGO_ATIVO = 0b101
 
 
 def calcular_nivel_torre(distancia):
+    """Mapeia a distancia lida (mm) para o nivel da torre (0 = apagada)."""
     distancia_normalizada = max(0, min(int(distancia), MAX_DISTANCIA))
-    intervalo = max(1, (MAX_DISTANCIA - 15) // TORRE_NUM_NIVEIS + 1)
-    nivel = distancia_normalizada // intervalo
+
+    if distancia_normalizada < TORRE_DISTANCIA_MIN:
+        nivel = 0
+    else:
+        largura_faixa = (MAX_DISTANCIA - TORRE_DISTANCIA_MIN) / TORRE_NUM_NIVEIS
+        acima_da_zona_morta = distancia_normalizada - TORRE_DISTANCIA_MIN
+        nivel = min(TORRE_NUM_NIVEIS, int(acima_da_zona_morta // largura_faixa) + 1)
 
     if TORRE_INVERTIDA:
-        nivel = (TORRE_NUM_NIVEIS - 1) - nivel
+        nivel = TORRE_NUM_NIVEIS - nivel
 
     return nivel
 
 
 def obter_codigo_torre(nivel):
-    color = COLOR_TABLE['green']
+    """Monta o valor de cada registrador da torre para acender `nivel` segmentos."""
     on = STATUS_TABLE['ON']
-    color_off = COLOR_TABLE['OFF']
+    cor_ligada = COLOR_TABLE['green']
+    cor_apagada = COLOR_TABLE['OFF']
 
-    all_off = (on + color_off) << 8 | (on + color_off)
+    nivel_limitado = max(0, min(int(nivel), TORRE_NUM_NIVEIS))
+    bytes_por_registrador = {
+        i: {'alto': cor_apagada, 'baixo': cor_apagada}
+        for i in range(TORRE_NUM_REGISTERS)
+    }
 
-    if nivel == 0:
-        return {i: all_off for i in range(TORRE_NUM_REGISTERS)}
-    if nivel == 1:
-        return {i: all_off for i in range(1, TORRE_NUM_REGISTERS)} | {0: (on + color_off) << 8 | (on + color) }
-    if nivel == 2:
-        return {i: all_off for i in range(1, TORRE_NUM_REGISTERS)} | {0: (on + color) << 8 | (on + color) }
-    if nivel == 3:
-        return {i: all_off for i in range(2, TORRE_NUM_REGISTERS)} | {0: (on + color) << 8 | (on + color), 1: (on + color) << 8 | (on + color_off) }
-    if nivel == 4:
-        return {i: all_off for i in range(2, TORRE_NUM_REGISTERS)} |{0: (on + color) << 8 | (on + color), 1: (on + color) << 8 | (on + color) }
-    if nivel >= 5:
-        return {i: (on + color) << 8 | (on + color) for i in range(TORRE_NUM_REGISTERS)}
+    for indice, (registrador, posicao) in enumerate(TORRE_SEGMENTOS):
+        if indice < nivel_limitado:
+            bytes_por_registrador[registrador][posicao] = cor_ligada
+
+    return {
+        i: (on + bytes_registrador['alto']) << 8 | (on + bytes_registrador['baixo'])
+        for i, bytes_registrador in bytes_por_registrador.items()
+    }
 
 
 def escrever_torre(cliente, nivel):
