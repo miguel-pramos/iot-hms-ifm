@@ -21,3 +21,6 @@ ENV/
 # Env files
 .env
 .env.local
+
+# Saídas do bench de KPI
+bench-out/
