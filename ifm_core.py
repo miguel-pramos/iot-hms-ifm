@@ -52,13 +52,15 @@ MAX_DISTANCIA = 240
 TORRE_DISTANCIA_MIN = 15
 # Ordem fisica de acendimento, do segmento de baixo para o de cima:
 # (indice do registrador a partir de 2102, byte do registrador).
-# Os 4 primeiros vem do mapeamento ja validado na bancada; o 5o segue o mesmo
-# zigue-zague e e o unico inferido -- basta trocar aqui se o hardware divergir.
+# Levantado na bancada acendendo um byte por vez: os 5 segmentos ocupam bytes
+# consecutivos a partir do byte BAIXO de 2102. O byte alto de 2102 nao aciona
+# nenhum segmento -- usa-lo como se fosse o segundo segmento deslocava todo o
+# resto e deixava o quarto segmento apagado.
 TORRE_SEGMENTOS = (
     (0, 'baixo'),
-    (0, 'alto'),
     (1, 'alto'),
     (1, 'baixo'),
+    (2, 'alto'),
     (2, 'baixo'),
 )
 TORRE_CODIGO_OFF = 0x00
@@ -105,17 +107,27 @@ def obter_codigo_torre(nivel):
 
 
 def escrever_torre(cliente, nivel):
-    sucesso = True
+    """Escreve os 3 registradores da torre numa unica transacao (FC16).
+
+    Escrita registrador a registrador (FC6, `write_single_register`) e recusada
+    pelo hub em parte dos bytes do process data de saida: o segmento nao acende
+    e a escrita volta como falha. A escrita em bloco passa, e de quebra paga um
+    round-trip por ciclo em vez de tres.
+    """
     codigos = obter_codigo_torre(nivel)
+    valores = [codigos[i] for i in range(TORRE_NUM_REGISTERS)]
     logger.info("Escrita na torre: nivel=%s codigos=%s", nivel, codigos)
     inicio_escrita_ns = time.perf_counter_ns()
-    for i in range(TORRE_NUM_REGISTERS):
-        registrador = REGISTRADOR_TORRE + i
-        if not cliente.write_single_register(registrador, codigos[i]):
-            logger.warning("Falha ao escrever na torre de LED no registrador %s", registrador + 1)
-            sucesso = False
-
+    sucesso = bool(cliente.write_multiple_registers(REGISTRADOR_TORRE, valores))
     tempo_escrita_ms = (time.perf_counter_ns() - inicio_escrita_ns) / 1_000_000
+
+    if not sucesso:
+        logger.warning(
+            "Falha ao escrever na torre de LED nos registradores %s..%s",
+            REGISTRADOR_TORRE + 1,
+            REGISTRADOR_TORRE + TORRE_NUM_REGISTERS,
+        )
+
     return sucesso, tempo_escrita_ms
 
 

@@ -136,9 +136,27 @@ precisa vir do run real.
 | 5 | 195–240 | 5 |
 
 A ordem física de acendimento está declarada em `TORRE_SEGMENTOS`
-(`ifm_core.py`) — os quatro primeiros segmentos vêm do mapeamento validado na
-bancada; **o quinto (byte baixo do registrador 2104) é inferido e ainda
-precisa de conferência no hardware.**
+(`ifm_core.py`), levantada na bancada acendendo um byte por vez. Os cinco
+segmentos ocupam bytes consecutivos a partir do byte **baixo** de 2102:
+
+| segmento (de baixo p/ cima) | registrador | byte |
+|---|---|---|
+| 1 | 2102 | baixo |
+| 2 | 2103 | alto |
+| 3 | 2103 | baixo |
+| 4 | 2104 | alto |
+| 5 | 2104 | baixo |
+
+O byte **alto de 2102 não aciona nenhum segmento**. O mapeamento anterior o
+tratava como o segundo segmento, o que deslocava todos os seguintes e deixava
+o quarto segmento apagado com a torre em nível 5.
+
+A escrita usa **FC16** (`write_multiple_registers`), os três registradores numa
+transação só. Com FC6 (`write_single_register`) o hub recusa parte dos bytes do
+process data de saída: o segmento não acende e a escrita volta como falha.
+Efeito colateral bem-vindo no bench — `modbus_write_ms` passa a ser um
+round-trip por ciclo em vez de três, então os números de escrita medidos antes
+desta mudança não são comparáveis com os de agora.
 
 ## Arquivos
 
@@ -167,4 +185,3 @@ precisa de conferência no hardware.**
   pontos em `localStorage` e perde tudo ao fechar a aba.
 - Na queda do link, o loop de leitura reconecta mas não bufferiza: as amostras
   do período de indisponibilidade são perdidas.
-- O quinto segmento da torre é inferido (ver acima).
