@@ -1,6 +1,6 @@
 # Configuracoes sobrescritiveis: make demo PORT=5021 SAMPLES=300
 HOST      ?= 127.0.0.1
-PORT      ?= 5020
+PORT      ?= 502
 SAMPLES   ?= 600
 INTERVAL  ?= 0.1
 WARMUP    ?= 20
@@ -8,6 +8,7 @@ OUTDIR    ?= bench/bench-out
 RATE      ?= 20
 SEED      ?= 42
 LABEL     ?= run
+IFM_IP    ?= 192.168.10.250
 
 BENCH = uv run bench/bench.py --host $(HOST) --port $(PORT) \
         --samples $(SAMPLES) --interval $(INTERVAL) --warmup $(WARMUP)
@@ -56,7 +57,7 @@ plot: ## Gera graficos e tabela markdown de todos os CSVs em OUTDIR
 	uv run bench/bench_plot.py $(OUTDIR)/*.csv --outdir $(OUTDIR) --metric todas
 
 app: ## Sobe o dashboard apontado para HOST/PORT (default: simulador)
-	env IFM_IP=$(HOST) IFM_PORT=$(PORT) uv run app.py
+	env IFM_IP=$(IFM_IP) IFM_PORT=$(PORT) uv run app.py
 
 app-sim: ## Sobe simulador e dashboard juntos (Ctrl-C derruba os dois)
 	@uv run sim_ifm.py --host $(HOST) --port $(PORT) --rate $(RATE) --seed $(SEED) \
