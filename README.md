@@ -170,6 +170,7 @@ desta mudança não são comparáveis com os de agora.
 | `ifm_read.py` | leitura avulsa de registradores, para inspeção |
 | `5g-slicing/` | configs de Open5GS e UERANSIM (2 slices) |
 | `TUTORIAL_MODBUS.md` | acesso ao hub pelo terminal (`mbpoll`), troubleshooting |
+| `TUTORIAL_5G_BENCH.md` | setup da rede 5G privada real (core, gNB, roteador HMS) pro bench |
 
 ## Variáveis de ambiente
 
