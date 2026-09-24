@@ -36,8 +36,18 @@ hub IFM (Modbus TCP) ──Ethernet──> roteador HMS "5G" (UE)
 
 ## 1. SIM
 
-Gravação feita com o SIM Personalize Tool (leitor de smartcard + software
-da operadora do cartão de teste). Campos usados:
+Gravação feita com o **SIM Personalize Tool** (OYEITIMES Co.,Ltd) — software
+chinês que vem junto com o cartão de teste (não é ferramenta genérica,
+é específico do fabricante do SIM), rodando num Windows 7 ligado a um
+leitor de smartcard PC/SC:
+
+![SIM Personalize Tool — KI/OPC/ADM borrados](docs/img/5g/09-sim-personalize-tool.png)
+
+> KI, OPC e ADM foram borrados na imagem antes de entrar no repo — são as
+> chaves de autenticação/administração reais da SIM, não fazem sentido
+> versionadas em texto claro mesmo num repo privado de laboratório.
+
+Campos usados:
 
 - **IMSI**: `001010123456780` (mcc `001` + mnc `01` + MSIN)
 - **PLMN**: `00101`
