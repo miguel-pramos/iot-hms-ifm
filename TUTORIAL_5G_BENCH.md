@@ -324,26 +324,87 @@ testado até o fim.
 
 ![1 to 1 NAT, WAN Interface = wan1](docs/img/5g/07-1to1-nat.png)
 
-### 6.3 Tentativa 3 (mais promissora) — Modbus TCP Gateway nativo
+### 6.3 Tentativa 3 — Modbus TCP Gateway nativo (beco sem saída, confirmado)
 
-`Industrial` → `Modbus TCP`. Esse roteador é da HMS Networks (fabricante
-de gateway industrial) e tem um gateway Modbus TCP embutido — ele termina
-a conexão TCP ele mesmo em vez de só encaminhar pacote, então evita o
-problema de roteamento assimétrico da 6.1/6.2.
+`Industrial` → `Modbus TCP`. O roteador é o **HMS Anybus NV1000
+"Wireless Router 5G"** (etiqueta física às vezes lida como "NV100A"; a
+UI web se identifica como `NV1000`/`NV1000 Switch Manager`).
 
 ![Modbus TCP Gateway - Status Disable, porta 502](docs/img/5g/08-modbus-tcp-gateway.png)
 
-Campos vistos: `Status` (Disable/Enable), `Listening Port` (502), `Max
-Modbus TCP Master/Client` (10), `Idle Timeout (ms)` (3000).
+Página inspecionada via `curl` autenticado (login `admin`/`admin` em
+`/action/login`, sessão por cookie) contra `ind_modbus_tcp.asp`. Form
+completo tem só 4 campos: `Status`, `Listening Port`, `Max Modbus TCP
+Master/Client`, `Idle Timeout (ms)`. **Não existe campo de IP/porta de
+destino nem tabela de mapeamento** — essa feature é o próprio roteador
+atuando como *slave* Modbus TCP (expõe dados/stats dele mesmo), não um
+proxy pro hub. **Descarta essa rota.**
 
-**Falta resolver**: esse formulário não mostra onde configurar o
-IP/porta do hub de *destino* — só a porta de escuta. Provavelmente existe
-outra aba/página dentro de `Industrial` (mapeamento Modbus, lista de
-I/O, serial port) que define o alvo. **Próximo passo**: explorar o menu
-`Industrial` em busca dessa página de mapeamento, habilitar o gateway
-(`Status: Enable`) só depois de achar onde apontar pro hub, e então
-desativar o Port Forwarding manual da seção 6.1 (as duas regras
-competiriam pela porta 502).
+### 6.4 Tentativa 4 — Hairpin NAT / masquerade no roteador (sem suporte na GUI)
+
+Checado `Security` → `NAT Settings`:
+
+- `N to 1 NAT` (`sec_nat.asp`): NAPT já habilitado por padrão nas 3
+  interfaces (WAN1/WAN2/WWAN) — é masquerade de tráfego LAN→WAN
+  (saída), não resolve o hairpin do Port Forwarding (entrada).
+- Sem checkbox de "NAT loopback"/hairpin em lugar nenhum da GUI do
+  NV1000.
+- `Security` → `Remote Management` (`sec_remote.asp`) tem SSH
+  gerencial habilitado (`enableSsh = true`) pro Linux do próprio
+  roteador — em tese daria pra forçar `iptables -t nat -A POSTROUTING
+  -d 192.168.10.250 -p tcp --dport 502 -j MASQUERADE` na mão, mas
+  **não tem credencial de acesso** (usuário/senha da GUI web não bate
+  com o SSH gerencial). Rota abandonada por burocracia/falta de
+  acesso — não é o caminho certo pra um setup industrial mesmo.
+
+### 6.5 Causa raiz real e fix — configurar gateway no hub (AL1340)
+
+O hub é o **ifm AL1340** (IO-Link master, Modbus TCP interface). Ele
+tem duas interfaces Ethernet físicas e independentes, cada uma com seu
+próprio IP:
+
+| Porta física | Protocolo | IP de fábrica |
+|---|---|---|
+| X21/X22 (fieldbus) | Modbus TCP | `192.168.1.250` → setado pra `192.168.10.250` neste projeto |
+| X23 (IoT) | HTTP/JSON (`ifm IoT Core`) | `169.254.X.X` (AutoIP/link-local) |
+
+Confirmado no manual oficial (*Operating Instructions AL1340*, seção
+9.1.6): "**the configuration of the IP settings of the fieldbus port
+is only possible via LR DEVICE and IoT**" — ou seja, o campo `Default
+gateway IP address` do lado Modbus (fábrica: `0.0.0.0`) **não dá pra
+setar por Modbus register nem por HTTP na própria porta `.250`** (ela
+nem serve HTTP — só fala Modbus TCP na 502).
+
+Duas rotas pra setar `Default gateway IP address = 192.168.10.1` no
+fieldbus:
+
+- **LR DEVICE** (ferramenta Windows grátis da ifm, [ifm.com](https://www.ifm.com)):
+  descobre o AL1340 na sub-rede já cabeada (`192.168.10.0/24`), sem
+  precisar tocar em cabo extra. **Caminho recomendado.**
+- **API JSON via porta X23**: precisa cabear essa porta separada num
+  switch da mesma rede. Tentativa nesta sessão falhou — mesmo com LED
+  de link piscando, nem `arp-scan --localnet` (escaneia a sub-rede
+  errada, a do próprio host, não `169.254.0.0/16`) nem captura passiva
+  (`tcpdump -i <if> -n arp`) acharam anúncio AutoIP do hub. Sem
+  descoberta L2 funcionando por aí — possível VLAN/switch cortando o
+  broadcast entre a porta do host e o X23. Não vale a pena insistir
+  dado que LR DEVICE resolve pela porta que já tá cabeada.
+
+Se for pela API JSON de qualquer forma, formato da chamada (documentado
+no manual, seção *ifm IoT Core*):
+
+```bash
+curl -X POST http://<IP_da_porta_IoT>/ -H "Content-Type: application/json" \
+  -d '{"code":"request","cid":1,"adr":"/fieldbussetup/network/ipdefaultgateway/setdata","data":{"newvalue":"192.168.10.1"}}'
+```
+
+**Atenção**: esse campo só é editável com a conexão Modbus TCP
+**interrompida** (para o bench/`ifm_read.py` antes de mexer).
+
+Depois de setar o gateway no hub, refaz o teste da seção 6.1 (Port
+Forwarding 502 → `192.168.10.250:502` já configurado) — com gateway
+certo no hub, o DNAT puro do roteador deve funcionar sem precisar de
+hairpin/masquerade nenhum.
 
 ## 7. Rodando o bench
 
